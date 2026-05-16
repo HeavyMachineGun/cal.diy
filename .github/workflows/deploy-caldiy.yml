@@ -1,0 +1,43 @@
+name: Deploy cal.diy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailnet
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:gh-actions
+
+      - name: Copy docker-compose to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: "docker-compose.caldiy.prod.yml"
+          target: "/home/${{ secrets.SERVER_USER }}/caldiy-deployment/"
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/caldiy-deployment/
+            docker compose -f docker-compose.caldiy.prod.yml pull calcom
+            docker compose -f docker-compose.caldiy.prod.yml up -d
+            docker image prune -f

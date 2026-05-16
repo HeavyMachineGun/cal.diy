@@ -1,0 +1,39 @@
+volumes:
+  redis-caldiy-data:
+
+networks:
+  caldiy:
+
+services:
+  redis-caldiy:
+    image: redis:7-alpine
+    container_name: caldiy-redis
+    restart: always
+    volumes:
+      - redis-caldiy-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    networks:
+      - caldiy
+
+  calcom:
+    image: calcom/cal.diy:latest
+    container_name: caldiy-calcom
+    ports:
+      - "3001:3000"
+    env_file: .env
+    restart: always
+    depends_on:
+      redis-caldiy:
+        condition: service_healthy
+    networks:
+      - caldiy
