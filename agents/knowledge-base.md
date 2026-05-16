@@ -92,3 +92,13 @@ Workflows and webhooks are two completely separate features in Cal.diy with diff
 - NOT in the webhooks directory
 
 When working on workflow triggers, do not reference or use webhook trigger implementations - they are distinct systems.
+
+## Deployment
+
+### GitHub Actions & Tailscale
+
+The `Deploy cal.diy` workflow (`deploy-caldiy.yml`) is used for deployment to the VPS.
+- **Networking**: Uses `tailscale/github-action@v3` to connect to the private network.
+- **Secrets**: Secrets are managed via the **GitHub Environment** named `tailscale`. This ensures that the deployment job has access to environment-specific credentials while connected to the tailnet.
+- **Action Credentials**: `TS_OAUTH_CLIENT_ID` and `TS_OAUTH_SECRET` must be stored as Repository Secrets to allow the initial connection to Tailscale.
+
